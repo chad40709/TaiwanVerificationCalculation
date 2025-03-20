@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>收支比率計算器</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .calculator {
+            background-color: #f8f8f8;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e9f7ef;
+            border-radius: 4px;
+            display: none;
+        }
+        .result h2 {
+            margin-top: 0;
+            color: #333;
+        }
+        .result-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2E8B57;
+        }
+        .alert {
+            color: #D8000C;
+            font-size: 14px;
+            display: none;
+            margin-top: 5px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 8px;
+            text-align: center;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        tr.highlighted {
+            background-color: #ffffcc;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>收支比率計算器</h1>
+    <div class="calculator">
+        <div class="form-group">
+            <label for="monthlyIncome">月收入 (NT$)</label>
+            <input type="number" id="monthlyIncome" placeholder="請輸入月收入" min="0">
+            <div id="incomeAlert" class="alert">請輸入有效的月收入</div>
+        </div>
+        <div class="form-group">
+            <label for="mortgage">月房貸還款 (NT$)</label>
+            <input type="number" id="mortgage" placeholder="請輸入月房貸還款金額" min="0">
+        </div>
+        <div class="form-group">
+            <label for="loan">信貸 (NT$)</label>
+            <input type="number" id="loan" placeholder="請輸入信貸金額" min="0">
+        </div>
+        <div class="form-group">
+            <label for="creditCard">信用卡分期 (NT$)</label>
+            <input type="number" id="creditCard" placeholder="請輸入信用卡分期金額" min="0">
+        </div>
+        <div class="form-group">
+            <label for="location">地區</label>
+            <select id="location">
+                <option value="20379">台北市</option>
+                <option value="16040">高雄市</option>
+                <option value="16900">新北市</option>
+                <option value="16077">台中市</option>
+                <option value="15515">台南市</option>
+                <option value="16768">桃園市</option>
+                <option value="14341">金門縣</option>
+                <option value="14341">連江縣</option>
+                <option value="15515">台灣省</option>
+            </select>
+        </div>
+        <button onclick="calculateRatio()">計算收支比率</button>
+        
+       <div id="result" class="result"></div>
+    </div>
+
+<script>
+    function calculateRatio() {
+        // 獲取輸入值
+        const monthlyIncomeInput = document.getElementById("monthlyIncome").value;
+        const mortgageInput = document.getElementById("mortgage").value;
+        const loanInput = document.getElementById("loan").value;
+        const creditCardInput = document.getElementById("creditCard").value;
+        const livingCost = parseFloat(document.getElementById("location").value);
+
+        // 轉換為數字，預設為 0 如果無效
+        const monthlyIncome = parseFloat(monthlyIncomeInput) || 0;
+        const mortgage = parseFloat(mortgageInput) || 0;
+        const loan = parseFloat(loanInput) || 0;
+        const creditCard = parseFloat(creditCardInput) || 0;
+
+        // 檢查哪些欄位有值（非空且不為 undefined）
+        const hasIncome = monthlyIncomeInput !== "" && !isNaN(monthlyIncome);
+        const hasMortgage = mortgageInput !== "" && !isNaN(mortgage);
+        const hasLoan = loanInput !== "" && !isNaN(loan);
+        const hasCreditCard = creditCardInput !== "" && !isNaN(creditCard);
+        const hasLocation = !isNaN(livingCost);
+
+        const resultDiv = document.getElementById("result");
+        
+        // 所有欄位都有輸入時，按原邏輯計算
+        if (hasIncome && hasMortgage && hasLoan && hasCreditCard && hasLocation) {
+            document.getElementById("incomeAlert").style.display = "none";
+
+            const totalExpense = mortgage + livingCost + loan + creditCard;
+            let ratio = totalExpense > 0 ? monthlyIncome / totalExpense : 0;
+            const percentage = (ratio * 100).toFixed(0) + "%";
+
+            let loanRate = "";
+            let highlightedRow = "";
+            if (ratio >= 2) {
+                loanRate = "依核貸成數規定";
+                highlightedRow = "row1";
+            } else if (ratio >= 1.8 && ratio < 2) {
+                loanRate = "依核貸成數規定減 0.5 成";
+                highlightedRow = "row2";
+            } else if (ratio >= 1.6 && ratio < 1.8) {
+                loanRate = "依核貸成數規定減 1 成";
+                highlightedRow = "row3";
+            } else if (ratio >= 1.4 && ratio < 1.6) {
+                loanRate = "依核貸成數規定減 1.5 成";
+                highlightedRow = "row4";
+            } else {
+                loanRate = "依核貸成數規定減 2 成";
+                highlightedRow = "row5";
+            }
+
+            resultDiv.innerHTML = `
+                <h2>計算結果</h2>
+                <div id="resultDetails">
+                    <p>您的月收入: NT$ <span id="resultIncome">${monthlyIncome.toLocaleString()}</span></p>
+                    <p>地區最低生活費: NT$ <span id="resultLivingCost">${livingCost.toLocaleString()}</span></p>
+                    <p>月支出總計: NT$ <span id="resultExpense">${totalExpense.toLocaleString()}</span></p>
+                    <p>收支比率: <span id="resultRatio" class="result-value">${ratio.toFixed(2)}</span> (<span id="resultPercentage">${percentage}</span>)</p>
+                    <p>最高核貸成數: <span id="resultLoanRate" class="result-value">${loanRate}</span></p>
+                </div>
+                <table id="ratioTable">
+                    <tr><th>收支比率</th><th>最高核貸成數</th></tr>
+                    <tr id="row1"><td>X≥200%</td><td>依核貸成數規定</td></tr>
+                    <tr id="row2"><td>180%≤X＜200%</td><td>依核貸成數規定減 0.5 成</td></tr>
+                    <tr id="row3"><td>160%≤X＜180%</td><td>依核貸成數規定減 1 成</td></tr>
+                    <tr id="row4"><td>140%≤X＜160%</td><td>依核貸成數規定減 1.5 成</td></tr>
+                    <tr id="row5"><td>X＜140%</td><td>依核貸成數規定減 2 成</td></tr>
+                </table>
+            `;
+            resultDiv.style.display = "block";
+            highlightRow(highlightedRow);
+        }
+        // 只有月收入未填寫，反推最低月收入
+        else if (!hasIncome && hasMortgage && hasLoan && hasCreditCard && hasLocation) {
+            const totalExpense = mortgage + livingCost + loan + creditCard;
+            const ratios = [2, 1.8, 1.6, 1.4, 1.2];
+            const loanRates = [
+                "依核貸成數規定",
+                "依核貸成數規定減 0.5 成",
+                "依核貸成數規定減 1 成",
+                "依核貸成數規定減 1.5 成",
+                "依核貸成數規定減 2 成"
+            ];
+
+            let tableRows = "";
+            ratios.forEach((ratio, index) => {
+                const minIncome = (totalExpense * ratio).toFixed(0);
+                tableRows += `<tr><td>${loanRates[index]}</td><td>NT$ ${minIncome.toLocaleString()}</td></tr>`;
+            });
+
+            resultDiv.innerHTML = `
+                <h2>反推最低月收入</h2>
+                <div id="resultDetails">
+                    <p>地區最低生活費: NT$ <span id="resultLivingCost">${livingCost.toLocaleString()}</span></p>
+                    <p>月支出總計: NT$ ${totalExpense.toLocaleString()}</p>
+                </div>
+                <table id="ratioTable">
+                    <tr><th>最高核貸成數</th><th>月收入</th></tr>
+                    ${tableRows}
+                </table>
+            `;
+            resultDiv.style.display = "block";
+        }
+        // 只有月房貸還款未填寫，反推最高房貸還款
+        else if (hasIncome && !hasMortgage && hasLoan && hasCreditCard && hasLocation) {
+            const fixedExpense = livingCost + loan + creditCard;
+            const ratios = [2, 1.8, 1.6, 1.4, 1.2];
+            const loanRates = [
+                "依核貸成數規定",
+                "依核貸成數規定減 0.5 成",
+                "依核貸成數規定減 1 成",
+                "依核貸成數規定減 1.5 成",
+                "依核貸成數規定減 2 成"
+            ];
+
+            let tableRows = "";
+            ratios.forEach((ratio, index) => {
+                const maxMortgage = (monthlyIncome / ratio - fixedExpense).toFixed(0);
+                if (maxMortgage > 0) {
+                    tableRows += `<tr><td>${loanRates[index]}</td><td>NT$ ${maxMortgage.toLocaleString()}</td></tr>`;
+                } else {
+                    tableRows += `<tr><td>${loanRates[index]}</td><td>無法滿足條件 (房貸還款需為正數)</td></tr>`;
+                }
+            });
+
+            resultDiv.innerHTML = `
+                <h2>反推最高月房貸還款</h2>
+                <div id="resultDetails">
+                    <p>您的月收入: NT$ ${monthlyIncome.toLocaleString()}</p>
+                    <p>地區最低生活費: NT$ <span id="resultLivingCost">${livingCost.toLocaleString()}</span></p>
+                    <p>固定支出總計: NT$ ${fixedExpense.toLocaleString()}</p>
+                </div>
+                <table id="ratioTable">
+                    <tr><th>最高核貸成數</th><th>月房貸還款</th></tr>
+                    ${tableRows}
+                </table>
+            `;
+            resultDiv.style.display = "block";
+        } else {
+            document.getElementById("incomeAlert").textContent = "請確保輸入足夠的資料以進行計算或反推";
+            document.getElementById("incomeAlert").style.display = "block";
+            resultDiv.style.display = "none";
+        }
+    }
+
+    function highlightRow(rowId) {
+        for (let i = 1; i <= 5; i++) {
+            const row = document.getElementById("row" + i);
+            if (row) row.classList.remove("highlighted");
+        }
+        const targetRow = document.getElementById(rowId);
+        if (targetRow) targetRow.classList.add("highlighted");
+    }
+</script>
+</body>
+</html>
